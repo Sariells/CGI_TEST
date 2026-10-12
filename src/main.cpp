@@ -1,16 +1,92 @@
-#include <iostream>
+#include <cwchar>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <string>
 
-// TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 int main() {
-    // TIP Press <shortcut actionId="RenameElement"/> when your caret is at the <b>lang</b> variable name to see how CLion can help you rename it.
-    auto lang = "C++";
-    std::cout << "Hello and welcome to " << lang << "!\n";
+    WSADATA data{};
 
-    for (int i = 1; i <= 5; i++) {
-        // TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-        std::cout << "i = " << i << std::endl;
+    int iResult = 0;
+
+    SOCKET Listensocket = INVALID_SOCKET;
+
+    sockaddr_in service{};
+
+    char buffer[4096]{};
+
+    std::string html = "<h1> HELLO FROM ME!</h1>";
+    std::string headers =
+            "HTTP/1.1 200 OK\r\n"
+            "content-Type: text/html;charset=utf8\r\n"
+            "Content-Length: " +std::to_string(html.size()) + "\r\n"
+            "Connection: close\r\n"
+            "\r\n";
+    std::string responce = headers + html;
+    iResult = WSAStartup(MAKEWORD(2, 2), &data);
+
+    if(iResult != NO_ERROR){
+        wprintf(L"Error at WSAStartup()\n");
+        return 1;
     }
 
+    Listensocket = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+
+    if(Listensocket == INVALID_SOCKET){
+        wprintf(L"socket function failed with error: %u\n",WSAGetLastError());
+        WSACleanup();
+        return 1;
+    }
+
+    service.sin_family = AF_INET;
+    service.sin_port = htons(8080);
+
+    inet_pton(AF_INET,
+              "127.0.0.1",
+              &service.sin_addr);
+
+
+    iResult = bind(Listensocket, (SOCKADDR *) &service, sizeof(service));
+
+    if (iResult == SOCKET_ERROR) {
+        wprintf(L"bind failed with error %u\n", WSAGetLastError());
+        closesocket(Listensocket);
+        WSACleanup();
+        return 1;
+    } else {
+        wprintf(L"bind succes\n");
+    }
+
+
+    if( listen(Listensocket,SOMAXCONN) == SOCKET_ERROR) {
+        wprintf(L"Listen() function failed with error: %d\n", WSAGetLastError());
+        closesocket(Listensocket);
+        WSACleanup();
+        return 1;
+    }
+
+    SOCKET Clientsocket = accept(Listensocket,nullptr,nullptr);
+    if(Clientsocket == INVALID_SOCKET){
+        wprintf(L"accept() function failed with error: %d\n",WSAGetLastError());
+        closesocket(Listensocket);
+        WSACleanup();
+        return 1;
+    }
+
+    int rBytes= recv(Clientsocket,buffer,sizeof(buffer),0);
+    if(rBytes == SOCKET_ERROR){
+        wprintf(L"recv() function failed with error: %d\n",WSAGetLastError());
+    }
+    else if(rBytes == 0 ){
+        wprintf(L"Client Disconnected\n");
+    }else{
+        wprintf(L"Received %d bytes\n", rBytes);
+        wprintf(L"%.*hs\n", rBytes, buffer);
+    }
+
+    send(Clientsocket,responce.data(),responce.size(),0);
+
+    closesocket(Clientsocket);
+    closesocket(Listensocket);
+    WSACleanup();
     return 0;
-    // TIP See CLion help at <a href="https://www.jetbrains.com/help/clion/">jetbrains.com/help/clion/</a>. Also, you can try interactive lessons for CLion by selecting 'Help | Learn IDE Features' from the main menu.
 }
