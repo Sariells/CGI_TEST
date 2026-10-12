@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(CGI_TEST src/main.cpp
-        src/httpServer.cpp
-        src/httpServer.h)
+        src/HttpServer.cpp
+        src/HttpServer.h)
 target_include_directories(CGI_TEST PRIVATE src)
 if(MSVC)
     target_compile_options(CGI_TEST PRIVATE
