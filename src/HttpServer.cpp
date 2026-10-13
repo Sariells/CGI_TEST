@@ -101,8 +101,6 @@ bool HttpServer::init() {
         closesocket(Listensocket);
         WSACleanup();
         return false;
-    } else {
-        wprintf(L"bind succes\n");
     }
     if(listen(Listensocket,SOMAXCONN) == SOCKET_ERROR) {
         wprintf(L"Listen() function failed with error: %d\n", WSAGetLastError());
